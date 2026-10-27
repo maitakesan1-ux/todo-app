@@ -1,36 +1,60 @@
-// HTMLの要素を取得し、TypeScriptの「型（HTMLInputElementなど）」を指定する
+// 画面の要素を取得
 const todoInput = document.getElementById('todo-input') as HTMLInputElement;
 const addBtn = document.getElementById('add-btn') as HTMLButtonElement;
 const todoList = document.getElementById('todo-list') as HTMLUListElement;
+
+// 保存されているタスク一覧を取得する関数
+const getStoredTasks = (): string[] => {
+  const tasksJson = localStorage.getItem('tasks');
+  return tasksJson ? JSON.parse(tasksJson) : [];
+};
+
+// タスク一覧をローカルストレージに保存する関数
+const saveTasks = (tasks: string[]): void => {
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+};
+
+// 画面にタスクを描画する関数
+const renderTask = (taskText: string): void => {
+  const li: HTMLLIElement = document.createElement('li');
+  li.textContent = taskText;
+
+  const deleteBtn: HTMLButtonElement = document.createElement('button');
+  deleteBtn.textContent = '削除';
+  deleteBtn.className = 'delete-btn';
+
+  // 削除ボタンの処理
+  deleteBtn.addEventListener('click', () => {
+    todoList.removeChild(li);
+    // ストレージからも削除して保存
+    const tasks = getStoredTasks().filter((t) => t !== taskText);
+    saveTasks(tasks);
+  });
+
+  li.appendChild(deleteBtn);
+  todoList.appendChild(li);
+};
+
+// 初回読み込み時：保存されているタスクを画面に表示
+const initialTasks = getStoredTasks();
+initialTasks.forEach((task) => renderTask(task));
 
 // 「追加」ボタンがクリックされた時の処理
 addBtn.addEventListener('click', () => {
   const taskText: string = todoInput.value.trim();
 
-  // 入力が空の場合は何もしない
   if (taskText === '') {
     alert('タスクを入力してください！');
     return;
   }
 
-  // 新しい <li> (リスト項目) を作成
-  const li: HTMLLIElement = document.createElement('li');
-  li.textContent = taskText;
+  // 画面に追加
+  renderTask(taskText);
 
-  // 「削除」ボタンを作成
-  const deleteBtn: HTMLButtonElement = document.createElement('button');
-  deleteBtn.textContent = '削除';
-  deleteBtn.className = 'delete-btn';
+  // ストレージに保存
+  const tasks = getStoredTasks();
+  tasks.push(taskText);
+  saveTasks(tasks);
 
-  // 削除ボタンが押されたら、そのタスクを消す処理
-  deleteBtn.addEventListener('click', () => {
-    todoList.removeChild(li);
-  });
-
-  // <li> の中に削除ボタンを追加し、それを画面のリスト (<ul>) に追加
-  li.appendChild(deleteBtn);
-  todoList.appendChild(li);
-
-  // 入力欄を空にする
   todoInput.value = '';
 });
